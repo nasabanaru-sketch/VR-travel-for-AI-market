@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>AI VR Travel 2026</title>
+    <meta name="description" content="VR Travel Experience">
+    <!-- A-Frame ライブラリ -->
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    
+    <script>
+      // 世界を切り替えるための仕組み（コンポーネント）
+      AFRAME.registerComponent('change-world', {
+        schema: {
+          img: {type: 'string'},
+          title: {type: 'string'}
+        },
+        init: function () {
+          var data = this.data;
+          var el = this.el;
+          
+          el.addEventListener('click', function () {
+            // 背景画像を変更
+            var sky = document.querySelector('#main-sky');
+            sky.setAttribute('src', data.img);
+            
+            // 目の前のテキストを変更
+            var text = document.querySelector('#info-text');
+            text.setAttribute('value', data.title);
+            
+            // フェード演出用のアニメーション（簡易版）
+            sky.emit('fade');
+          });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <!-- VRシーン -->
+    <a-scene webxr="optionalFeatures: hit-test, local-floor;">
+
+      <a-assets>
+        <!-- 
+          【画像の読み込み方】
+          GitHubに画像をアップロードしたら、ここを書き換えます。
+          同じ場所にアップロードしたなら、ファイル名だけでOKです。
+        -->
+        <img id="img-home" src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/cubes.jpg">
+        <img id="img-world1" src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/city.jpg">
+        <img id="img-world2" src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/sechelt.jpg">
+      </a-assets>
+
+      <!-- 背景（360度画像） -->
+      <a-sky id="main-sky" src="#img-home" rotation="0 -130 0"
+             animation__fade="property: material.color; type: color; from: #000; to: #FFF; dur: 300; startEvents: fade">
+      </a-sky>
+
+      <!-- コントローラー（両手） -->
+      <a-entity id="leftHand" laser-controls="hand: left" raycaster="objects: .clickable"></a-entity>
+      <a-entity id="rightHand" laser-controls="hand: right" raycaster="objects: .clickable"></a-entity>
+      
+      <!-- 視線操作用カーソル（PCやスマホで確認する時用） -->
+      <a-camera>
+        <a-cursor color="yellow" fuse="true" fuse-timeout="1500"></a-cursor>
+      </a-camera>
+
+      <!-- メニューUI -->
+      <a-entity position="0 1.6 -2">
+        
+        <a-text id="info-text" value="Select Your Trip" align="center" position="0 0.8 0" scale="1.5 1.5 1.5"></a-text>
+
+        <!-- ボタン1 -->
+        <a-image src="#img-world1" position="-0.8 0 0" width="0.8" height="0.6" 
+                 class="clickable"
+                 change-world="img: #img-world1; title: Urban City">
+            <a-text value="City" align="center" position="0 -0.4 0"></a-text>
+        </a-image>
+
+        <!-- ボタン2 -->
+        <a-image src="#img-world2" position="0.8 0 0" width="0.8" height="0.6" 
+                 class="clickable"
+                 change-world="img: #img-world2; title: Lake Fantasy">
+            <a-text value="Lake" align="center" position="0 -0.4 0"></a-text>
+        </a-image>
+
+      </a-entity>
+    </a-scene>
+  </body>
+</html>
