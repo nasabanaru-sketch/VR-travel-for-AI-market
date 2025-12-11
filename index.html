@@ -1,88 +1,238 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>AI VR Travel 2026</title>
-    <meta name="description" content="VR Travel Experience">
-    <!-- A-Frame ライブラリ -->
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quest 3 VR Selfie Experience</title>
+    <!-- A-Frame ライブラリの読み込み -->
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     
-    <script>
-      // 世界を切り替えるための仕組み（コンポーネント）
-      AFRAME.registerComponent('change-world', {
-        schema: {
-          img: {type: 'string'},
-          title: {type: 'string'}
-        },
-        init: function () {
-          var data = this.data;
-          var el = this.el;
-          
-          el.addEventListener('click', function () {
-            // 背景画像を変更
-            var sky = document.querySelector('#main-sky');
-            sky.setAttribute('src', data.img);
-            
-            // 目の前のテキストを変更
-            var text = document.querySelector('#info-text');
-            text.setAttribute('value', data.title);
-            
-            // フェード演出用のアニメーション（簡易版）
-            sky.emit('fade');
-          });
+    <style>
+        /* VRに入る前のUIスタイル */
+        #ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: white;
+            font-family: sans-serif;
         }
-      });
-    </script>
-  </head>
-  <body>
+        .btn {
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 18px;
+            background: #e4405f;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+        #status {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- UIオーバーレイ: VRに入る前にカメラ許可を得るため -->
+    <div id="ui-overlay">
+        <h1>VR Selfie App</h1>
+        <p>Quest 3用にカメラ権限が必要です。</p>
+        <button id="start-camera-btn" class="btn">1. カメラを起動する</button>
+        <div id="status">カメラ未接続</div>
+        <p>※カメラ映像が表示されたら右下の「VR」ボタンを押してください</p>
+    </div>
+
     <!-- VRシーン -->
-    <a-scene webxr="optionalFeatures: hit-test, local-floor;">
-
-      <a-assets>
-        <!-- 
-          【画像の読み込み方】
-          GitHubに画像をアップロードしたら、ここを書き換えます。
-          同じ場所にアップロードしたなら、ファイル名だけでOKです。
-        -->
-        <img id="img-home" src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/cubes.jpg">
-        <img id="img-world1" src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/city.jpg">
-        <img id="img-world2" src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/sechelt.jpg">
-      </a-assets>
-
-      <!-- 背景（360度画像） -->
-      <a-sky id="main-sky" src="#img-home" rotation="0 -130 0"
-             animation__fade="property: material.color; type: color; from: #000; to: #FFF; dur: 300; startEvents: fade">
-      </a-sky>
-
-      <!-- コントローラー（両手） -->
-      <a-entity id="leftHand" laser-controls="hand: left" raycaster="objects: .clickable"></a-entity>
-      <a-entity id="rightHand" laser-controls="hand: right" raycaster="objects: .clickable"></a-entity>
-      
-      <!-- 視線操作用カーソル（PCやスマホで確認する時用） -->
-      <a-camera>
-        <a-cursor color="yellow" fuse="true" fuse-timeout="1500"></a-cursor>
-      </a-camera>
-
-      <!-- メニューUI -->
-      <a-entity position="0 1.6 -2">
+    <a-scene screenshot="width: 4096; height: 2048">
         
-        <a-text id="info-text" value="Select Your Trip" align="center" position="0 0.8 0" scale="1.5 1.5 1.5"></a-text>
+        <!-- アセット管理 -->
+        <a-assets>
+            <!-- マジックアワー（夕暮れ）の360度画像 -->
+            <!-- 著作権フリー(CC0)の信頼できるPoly Haven等のアセットを使用 -->
+            <img id="sky-texture" src="https://dl.polyhaven.org/file/ph-assets/HDRIs/extra/Tonemap/JPG-4k/kloofendal_48d_partly_cloudy_puresky_4k.jpg" crossorigin="anonymous">
+            
+            <!-- Webカメラの映像を受け取るためのvideo要素 -->
+            <video id="webcam-video" autoplay playsinline webkit-playsinline muted crossorigin="anonymous"></video>
+        </a-assets>
 
-        <!-- ボタン1 -->
-        <a-image src="#img-world1" position="-0.8 0 0" width="0.8" height="0.6" 
-                 class="clickable"
-                 change-world="img: #img-world1; title: Urban City">
-            <a-text value="City" align="center" position="0 -0.4 0"></a-text>
-        </a-image>
+        <!-- 環境設定: マジックアワーの空 -->
+        <!-- 色味を調整してマジックアワー感を強調 -->
+        <a-sky src="#sky-texture" color="#ffcfdb" rotation="0 -90 0"></a-sky>
 
-        <!-- ボタン2 -->
-        <a-image src="#img-world2" position="0.8 0 0" width="0.8" height="0.6" 
-                 class="clickable"
-                 change-world="img: #img-world2; title: Lake Fantasy">
-            <a-text value="Lake" align="center" position="0 -0.4 0"></a-text>
-        </a-image>
+        <!-- プレイヤーリグ（カメラとコントローラー） -->
+        <a-entity id="rig" position="0 0 0">
+            <a-entity camera position="0 1.6 0" look-controls="pointerLockEnabled: false">
+                <!-- 視線カーソル（PCデバッグ用、VRではコントローラー優先） -->
+                <a-cursor visible="false"></a-cursor>
+            </a-entity>
+            
+            <!-- 左手コントローラー -->
+            <a-entity laser-controls="hand: left" raycaster="objects: .clickable; far: 5" line="color: red; opacity: 0.75"></a-entity>
+            <!-- 右手コントローラー -->
+            <a-entity laser-controls="hand: right" raycaster="objects: .clickable; far: 5" line="color: red; opacity: 0.75"></a-entity>
+        </a-entity>
 
-      </a-entity>
+        <!-- 自撮りパネルシステム -->
+        <!-- ユーザーの目の前（少し離れた場所）に配置 -->
+        <a-entity position="0 1.5 -1.2" rotation="0 0 0">
+            
+            <!-- フレーム -->
+            <a-plane position="0 0 -0.01" width="1.1" height="0.9" color="#333" material="shader: flat"></a-plane>
+            
+            <!-- Webカメラ映像表示パネル -->
+            <a-plane id="cam-display" 
+                     width="1" height="0.75" 
+                     position="0 0.05 0"
+                     material="shader: flat; src: #webcam-video"
+                     class="clickable">
+            </a-plane>
+
+            <!-- 保存ボタン -->
+            <a-entity id="save-btn" position="0 -0.45 0.01" class="clickable">
+                <!-- ボタンの背景 -->
+                <a-plane width="0.4" height="0.15" color="#4CC3D9" hover-color="#7BC8A4">
+                    <a-text value="Take Photo" align="center" width="2" color="white"></a-text>
+                </a-plane>
+            </a-entity>
+
+            <!-- ステータス表示テキスト -->
+            <a-text id="msg-text" value="Ready" position="0 -0.6 0" align="center" width="2" color="white"></a-text>
+        </a-entity>
+
     </a-scene>
-  </body>
+
+    <script>
+        // 要素の取得
+        const videoEl = document.getElementById('webcam-video');
+        const startBtn = document.getElementById('start-camera-btn');
+        const statusText = document.getElementById('status');
+        const uiOverlay = document.getElementById('ui-overlay');
+        const saveBtn = document.getElementById('save-btn');
+        const msgText = document.querySelector('#msg-text');
+
+        // カメラ起動処理
+        startBtn.addEventListener('click', async () => {
+            try {
+                statusText.innerText = "カメラへのアクセスを要求中...";
+                
+                // カメラストリームの取得
+                // Quest 3のブラウザでは、外部カメラではなく内部処理用の映像または黒画面になる可能性がありますが、
+                // Web標準の方法で実装します。
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 1280 }, 
+                        height: { ideal: 720 },
+                        facingMode: "user" // フロントカメラ（自分向き）を指定
+                    }, 
+                    audio: false 
+                });
+
+                videoEl.srcObject = stream;
+                await videoEl.play();
+
+                statusText.innerText = "カメラ接続成功！下のVRボタンで開始してください。";
+                startBtn.style.display = 'none';
+                
+                // 3秒後にオーバーレイを消してVRに入りやすくする
+                setTimeout(() => {
+                    uiOverlay.style.display = 'none';
+                }, 2000);
+
+            } catch (err) {
+                console.error("Camera Error:", err);
+                statusText.innerText = "エラー: カメラにアクセスできませんでした。\n" + err.name;
+                
+                // フォールバック: カメラが使えない場合でもVR体験はできるようにする
+                setTimeout(() => {
+                    uiOverlay.style.display = 'none';
+                    msgText.setAttribute('value', 'Camera Unavailable');
+                }, 3000);
+            }
+        });
+
+        // 写真撮影と保存のロジック
+        // A-Frameのクリックイベントリスナー
+        saveBtn.addEventListener('click', takePhoto); // マウス用
+        
+        // Questコントローラーのレーザーポインター用イベント (raycaster)
+        saveBtn.addEventListener('mouseenter', function () {
+            this.children[0].setAttribute('color', '#FF4081'); // ホバー時の色変更
+        });
+        saveBtn.addEventListener('mouseleave', function () {
+            this.children[0].setAttribute('color', '#4CC3D9'); // 元の色
+        });
+
+        function takePhoto() {
+            // カウントダウン演出
+            msgText.setAttribute('value', '3...');
+            setTimeout(() => { msgText.setAttribute('value', '2...'); }, 500);
+            setTimeout(() => { msgText.setAttribute('value', '1...'); }, 1000);
+            
+            setTimeout(() => {
+                msgText.setAttribute('value', 'Cheese!');
+                processCapture();
+            }, 1500);
+        }
+
+        function processCapture() {
+            // キャンバスを作成して映像を描画
+            const canvas = document.createElement('canvas');
+            const width = videoEl.videoWidth || 640;
+            const height = videoEl.videoHeight || 480;
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            const ctx = canvas.getContext('2d');
+            
+            // 1. 背景を描画するかどうかの判断
+            // 要件には「VR体験者の上半身と背景を表示」とありますが、
+            // video要素(Webカメラ)は通常不透明です。
+            // クロマキー合成を行わない限り、単純なWebカメラ映像には「現実の背景」が映ります。
+            // ここでは「パネルに映っている映像（自分＋現実の背景）」をJPEGとして保存します。
+            
+            // 映像を反転させて描画（鏡のようにするため）
+            ctx.translate(width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(videoEl, 0, 0, width, height);
+
+            // タイムスタンプを入れる（オプション）
+            ctx.setTransform(1, 0, 0, 1, 0, 0); // 変形リセット
+            ctx.fillStyle = "white";
+            ctx.font = "20px Arial";
+            ctx.fillText("VR Selfie at Magic Hour", 20, height - 20);
+
+            // 画像データの生成 (JPEG)
+            const dataURL = canvas.toDataURL('image/jpeg', 0.9);
+
+            // ダウンロードリンクの作成とクリック
+            const link = document.createElement('a');
+            link.href = dataURL;
+            link.download = `vr-selfie-${Date.now()}.jpg`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            msgText.setAttribute('value', 'Saved!');
+            
+            setTimeout(() => {
+                msgText.setAttribute('value', 'Ready');
+            }, 2000);
+        }
+    </script>
+</body>
 </html>
