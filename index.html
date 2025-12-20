@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>VR Trip Experience</title>
+    <title>VR Trip Experience (Radial Menu)</title>
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
   </head>
   <body>
@@ -34,6 +34,9 @@
 
           // 2. 画面が真っ白になったタイミング（3秒後）で画像を切り替え & メニューを隠す
           setTimeout(() => {
+            // 画像本来の色を見せるためにカラーを白にする
+            this.sky.setAttribute('color', '#FFFFFF');
+            // 画像切り替え
             this.sky.setAttribute('src', imageId);
             this.menu.setAttribute('visible', 'false');
             
@@ -53,7 +56,10 @@
 
             // 3秒後にメニュー画面に戻す
             setTimeout(() => {
-              this.sky.setAttribute('src', '#img-default');
+              // 画像をリセットし、背景を黒に戻す
+              this.sky.setAttribute('src', '');
+              this.sky.setAttribute('color', '#000000');
+              
               this.menu.setAttribute('visible', 'true');
               
               // フェードイン（メニューが見えてくる）
@@ -66,26 +72,32 @@
       });
     </script>
 
-    <a-scene trip-manager background="color: #ECECEC">
+    <a-scene trip-manager background="color: #000000">
       
       <a-assets>
+        <!-- 
+             実際の画像ファイルがある場合はここに指定してください。
+             デモ用にダミーの背景色やプレースホルダー画像として機能します。
+        -->
         <img id="img-default" src="" crossorigin="anonymous"> 
-        
-        <img id="img1" src="Skya-image1.jpg" crossorigin="anonymous">
-        <img id="img2" src="Skya-image2.jpg" crossorigin="anonymous">
-        <img id="img3" src="Skya-image3.jpg" crossorigin="anonymous">
-        <img id="img4" src="Skya-image4.jpg" crossorigin="anonymous">
+        <img id="img1" src="" crossorigin="anonymous">
+        <img id="img2" src="" crossorigin="anonymous">
+        <img id="img3" src="" crossorigin="anonymous">
+        <img id="img4" src="" crossorigin="anonymous">
       </a-assets>
 
-      <a-sky id="main-sky" src="#img-default"></a-sky>
+      <!-- 初期状態は黒背景 -->
+      <a-sky id="main-sky" color="#000000" src=""></a-sky>
 
       <a-entity position="0 1.6 0">
         <a-camera look-controls="pointerLockEnabled: false">
+          <!-- フェード用スフィア -->
           <a-sphere id="fader" radius="0.2" material="shader: flat; color: white; side: back; transparent: true; opacity: 0"
             animation__white="property: material.opacity; to: 1; dur: 3000; startEvents: fade-white; easing: linear"
             animation__clear="property: material.opacity; to: 0; dur: 3000; startEvents: fade-clear; easing: linear">
           </a-sphere>
           
+          <!-- カーソル (注視用) -->
           <a-cursor
             color="black"
             fuse="true"
@@ -98,44 +110,70 @@
           </a-cursor>
         </a-camera>
         
+        <!-- コントローラー用レイキャスター -->
         <a-entity laser-controls="hand: left" raycaster="objects: .clickable; far: 10"></a-entity>
         <a-entity laser-controls="hand: right" raycaster="objects: .clickable; far: 10"></a-entity>
       </a-entity>
 
-      <a-entity id="menu-container" position="0 1.6 -3">
+      <!-- 
+        メニューコンテナ 
+        位置をユーザーの頭の位置(0 1.6 0)に設定し、ここを中心にパネルを配置します。
+      -->
+      <a-entity id="menu-container" position="0 1.6 0">
         
-        <a-text value="Select Your Destination" align="center" position="0 1.2 0" color="#FFF" scale="1.5 1.5 1.5"></a-text>
+        <!-- タイトルテキスト -->
+        <a-text value="Select Your Destination" align="center" position="0 1.3 -2.8" color="#FFF" scale="1.5 1.5 1.5"></a-text>
 
-        <a-entity position="-1.65 0 0" class="trip-btn clickable"
-                  geometry="primitive: plane; width: 1.0; height: 1.3"
-                  material="color: #4CC3D9"
-                  animation__mouseenter="property: scale; to: 1.1 1.1 1.1; dur: 200"
-                  animation__mouseleave="property: scale; to: 1 1 1; dur: 200">
-          <a-text value="Trip 1" align="center" color="white" position="0 0 0.01" scale="2 2 2"></a-text>
+        <!-- 
+          パネルの幅を width: 0.66 (約2/3) に変更して重なりを解消
+        -->
+
+        <!-- Panel 1: 左側 (25度回転) -->
+        <a-entity rotation="0 25 0">
+          <a-entity class="trip-btn clickable"
+                    position="0 0 -2.8"
+                    geometry="primitive: plane; width: 0.66; height: 1.3"
+                    material="color: #4CC3D9"
+                    animation__mouseenter="property: scale; to: 1.1 1.1 1.1; dur: 200"
+                    animation__mouseleave="property: scale; to: 1 1 1; dur: 200">
+            <a-text value="Trip 1" align="center" color="white" position="0 0 0.01" scale="2 2 2"></a-text>
+          </a-entity>
         </a-entity>
 
-        <a-entity position="-0.55 0 0" class="trip-btn clickable"
-                  geometry="primitive: plane; width: 1.0; height: 1.3"
-                  material="color: #7BC8A4"
-                  animation__mouseenter="property: scale; to: 1.1 1.1 1.1; dur: 200"
-                  animation__mouseleave="property: scale; to: 1 1 1; dur: 200">
-          <a-text value="Trip 2" align="center" color="white" position="0 0 0.01" scale="2 2 2"></a-text>
+        <!-- Panel 2: 左中央 (8度回転) -->
+        <a-entity rotation="0 8 0">
+          <a-entity class="trip-btn clickable"
+                    position="0 0 -2.8"
+                    geometry="primitive: plane; width: 0.66; height: 1.3"
+                    material="color: #7BC8A4"
+                    animation__mouseenter="property: scale; to: 1.1 1.1 1.1; dur: 200"
+                    animation__mouseleave="property: scale; to: 1 1 1; dur: 200">
+            <a-text value="Trip 2" align="center" color="white" position="0 0 0.01" scale="2 2 2"></a-text>
+          </a-entity>
         </a-entity>
 
-        <a-entity position="0.55 0 0" class="trip-btn clickable"
-                  geometry="primitive: plane; width: 1.0; height: 1.3"
-                  material="color: #EF2D5E"
-                  animation__mouseenter="property: scale; to: 1.1 1.1 1.1; dur: 200"
-                  animation__mouseleave="property: scale; to: 1 1 1; dur: 200">
-          <a-text value="Trip 3" align="center" color="white" position="0 0 0.01" scale="2 2 2"></a-text>
+        <!-- Panel 3: 右中央 (-8度回転) -->
+        <a-entity rotation="0 -8 0">
+          <a-entity class="trip-btn clickable"
+                    position="0 0 -2.8"
+                    geometry="primitive: plane; width: 0.66; height: 1.3"
+                    material="color: #EF2D5E"
+                    animation__mouseenter="property: scale; to: 1.1 1.1 1.1; dur: 200"
+                    animation__mouseleave="property: scale; to: 1 1 1; dur: 200">
+            <a-text value="Trip 3" align="center" color="white" position="0 0 0.01" scale="2 2 2"></a-text>
+          </a-entity>
         </a-entity>
 
-        <a-entity position="1.65 0 0" class="trip-btn clickable"
-                  geometry="primitive: plane; width: 1.0; height: 1.3"
-                  material="color: #FFC65D"
-                  animation__mouseenter="property: scale; to: 1.1 1.1 1.1; dur: 200"
-                  animation__mouseleave="property: scale; to: 1 1 1; dur: 200">
-          <a-text value="Trip 4" align="center" color="white" position="0 0 0.01" scale="2 2 2"></a-text>
+        <!-- Panel 4: 右側 (-25度回転) -->
+        <a-entity rotation="0 -25 0">
+          <a-entity class="trip-btn clickable"
+                    position="0 0 -2.8"
+                    geometry="primitive: plane; width: 0.66; height: 1.3"
+                    material="color: #FFC65D"
+                    animation__mouseenter="property: scale; to: 1.1 1.1 1.1; dur: 200"
+                    animation__mouseleave="property: scale; to: 1 1 1; dur: 200">
+            <a-text value="Trip 4" align="center" color="white" position="0 0 0.01" scale="2 2 2"></a-text>
+          </a-entity>
         </a-entity>
 
       </a-entity>
